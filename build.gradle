@@ -1,0 +1,56 @@
+plugins {
+    id 'java'
+    id 'war'
+    id 'org.springframework.boot' version '3.3.0'
+    id 'io.spring.dependency-management' version '1.1.5'
+}
+
+group = 'com.exam'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // JPA를 이용해서 Entity를 데이터베이스로 이용
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    // View 디자인
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    //검증
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    // 웹개발 환경설정
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    compileOnly 'org.projectlombok:lombok'
+    // 스프링부트 라이브러리
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    // h2데이터베이스
+    runtimeOnly 'com.h2database:h2'
+    // maria데이터베이스
+    //runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
+    //lombok
+    annotationProcessor 'org.projectlombok:lombok'
+    // 톰캣 서버
+    providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    // modelMapper(DTO <-> Entity간에 변환)
+    implementation 'org.modelmapper:modelmapper:3.1.1'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

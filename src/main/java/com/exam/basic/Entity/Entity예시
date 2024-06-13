@@ -1,0 +1,53 @@
+
+
+
+/데이터베이스 테이블
+//가능하면 소문자로 구성, _문자로 단어 분리x
+//기본키 id(유사하게)
+//나머지 필드는 항목이름으로 영문
+//테이블명 작업 이름
+
+@Getter
+@Setter
+@ToString // 모든 변수를 전달
+
+//클래스 생성자 BoardEntity(), BoardEntity(변수,....)
+@AllArgsConstructor
+@NoArgsConstructor
+
+//변수의 값을 getter와 setter를 이용하지 않고 변경
+@Builder
+
+//데이터 베이스 테이블을 위한 클래스
+@Entity
+//자바17 jakarta, 자바15이하 javax
+@Table(name = "board")
+// 테이블 카운트에 정보를 저장할 테이블
+@SequenceGenerator(
+        name = "board_seq",
+        sequenceName = "board_seq",
+        initialValue = 1, //시작값
+        allocationSize = 1 //증가값
+
+)
+public class BoardEntity extends BaseEntity{
+
+    //기본키, 유일키 - 중복x
+    @Id
+    //생성전략
+    //숫자 변수 GenerationType.SEQUENCE - 숫자를 증가(랜덤)하면서 처리
+    //문자변수 GenerationType.IDENTITY - 중복되지 않도록 처리
+    @GeneratedValue(strategy = GenerationType.SEQUENCE,
+    generator = "board_seq")
+    private Long id;
+
+    //게시판 제목, 내용, 작성자, (생성일,수정일)
+    private String title;
+    private String content;
+    private String writer;
+
+    //변수를 처리할 필요한 메소드를 작성
+    //ModelMapper를 안 쓰는 경우에는
+    //Entity <-> DTO 간의 변환 메소드를 작성함
+
+} //비즈니스 모델

@@ -1,0 +1,40 @@
+
+
+
+@Getter
+@Setter
+@ToString // 모든 변수를 전달
+
+//클래스 생성자 BoardEntity(), BoardEntity(변수,....)
+@AllArgsConstructor
+@NoArgsConstructor
+
+//변수의 값을 getter와 setter를 이용하지 않고 변경
+@Builder
+//Entity(1)<->DTO(다)
+//하나의 Entity를 사용용도별로 DTO를 나누어서 작업
+//검증처리(View에서 입력내용이 정상적인 값인지 판별)
+public class BoardDTO {
+
+    private Long id;
+
+    //게시판 제목, 내용, 작성자, (생성일,수정일)
+    //@검증종류(message = "오류 메세지")
+    @NotBlank(message = "제목은 생략할 수 없습니다.") // 검증하고 문제시 메세지 발생
+    private String title;
+
+    @NotBlank(message = "내용은 생략할 수 없습니다.")
+    private String content;
+
+    @NotBlank(message = "작성자은 생략할 수 없습니다.")
+    private String writer;
+    private LocalDateTime modDate;
+    //Entity에 없는 변수 선언 가능(주문관리-> 금액처리)
+    //화면상에서만 필요한 것들 추가가능
+    private Integer sum;
+
+    //변수를 처리할 필요한 메소드를 작성
+    //ModelMapper를 안 쓰는 경우에는
+    //Entity <-> DTO 간의 변환 메소드를 작성함
+
+} //데이터 교환

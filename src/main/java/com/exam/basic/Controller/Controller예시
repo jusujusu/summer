@@ -1,0 +1,172 @@
+
+//제어를 위한 클래스
+@Controller
+// controller > Service 이용 > repository 이용
+@RequiredArgsConstructor // 주입
+//콘솔에 로그형식으로 내용을 출력
+@Log4j2
+public class BoardController {
+    //서비스 주입
+    //@Autowired는 private 클래스명을 선언시 자동주입
+    //@RequiredArgsConstructor는 private final 클래스명으로 선언시 자동주입
+
+    private final BoardService boardService;
+
+    //작업 순서     CRUD에서 짤게 적은 순으로
+    //form태그가 있는 페이지는 get/post 존재
+    //form태그가 없는 페이지는 get/post 중 선택
+
+
+    //TODO : 1. 검증
+    //TODO : 2. 페이지
+    //TODO : 3. 검색
+    //FixMe : 검증처리가 안됨
+
+
+
+    //삽입(C)
+    // ~Form(view로 이동), ~Proc(service로 처리)
+    //Service처리한 페이지는 redirect로 이동
+    @GetMapping("/board/insert")
+    public String insertForm(Model model){
+        log.info("일반적으로 처리");
+        log.warn("경고나 주의 메세지");
+        log.error("문제발생 메세지");
+
+        //검증
+        //"boardDTO" --> view${boardDTO.} 가 동일한지 확인
+        model.addAttribute("boardDTO", new BoardDTO());
+
+        return "board/insert"; // html파일로 이동
+    }
+
+
+    //입력한 내용을 DTO로 받는다.
+    //form(input태그 name)과 DTO(변수명) 매치 값을 전달
+    //@ModelAttribute이 매칭 해줌 (생략가능)
+    //입력값을 처리하는 부분에서 검증
+    @PostMapping("/board/insert")
+    //1. @Validated 대상 : 값이 들어오면 DTO를 이용해서 검증
+    //2. BindingResult : DTO에서 검증한 결과를 전달
+    public String insertProc(@Validated BoardDTO boardDTO,
+                             BindingResult bindingResult) {
+        //검증은 서비스 처리 전(데이터베이스 처리 오류를 방지하는게 목적)
+        if (bindingResult.hasErrors()) { //검증 결과에서 오류가 발생했으면
+            return "board/insert";  // 입력한 폼으로 다시 이동
+         }
+
+        //서비스 처리
+        boardService.insert(boardDTO);
+
+        return "redirect:/board/list"; // 이동할 맵핑명(컨트롤내에서 이동)
+    }
+
+
+
+
+
+
+    //수정(U)-DTO의 변수명
+    //rest방식 이전 = http://localhost:8080/board/update?id=12
+    //rest방식 = http://localhost:8080/board/update/12
+    //Path(맵핑에)Variable(변수)로 전달받은 값을 Long id에 저장
+    @GetMapping("/board/update/{id}")
+    //Model은 데이터베이스에서 받은 내용을 html에 전달하게 있으면 사용
+    //Model 언제 쓸 지 모르면 그냥 다 붙이기, model은 사용 안해도 오류 안남
+    public String updateForm(@PathVariable Long id,Model model) { //(받고, 보낼)
+        //개별조회 후 수정폼에 출력(조회한 내용을 DTO에 저장)
+        BoardDTO boardDTO = boardService.read(id);
+        //HTML에 값을 전달. (Model model)이 필요함
+        //model.addAttribute("변수명", 보낼 값) = 변수명은 html에서 만든 것 쓰기
+        model.addAttribute("boardDTO", boardDTO);
+
+        //서비스처리 (조회). 값을 가져와야 하기 때문
+        return "board/update";
+    }
+
+    //수정한 내용을 boardDTO가 받아서 데이터베이스에 수정처리
+    //검증처리 추가
+    @PostMapping("/board/update")
+    public String updateProc(@Validated BoardDTO boardDTO,
+                             BindingResult bindingResult,
+                             Model model) {
+        if (bindingResult.hasErrors()) {
+            return "/board/update";
+        }
+        boardService.update(boardDTO);
+        //서비스 처리 (수정)
+
+        return "redirect:/board/list";
+    }
+
+
+
+
+
+
+
+    //삭제(D)-DTO의 변수명
+    @GetMapping("/board/delete/{id}")
+    public String deleteProc(@PathVariable Long id) {
+        boardService.delete(id);
+        //서비스 처리 (삭제)
+        return "redirect:/board/list";
+    }
+
+
+
+
+
+
+
+    //전체조회(R)
+    @GetMapping("/board/list")
+    //View에서 페이지정보가 전달되지 않으면 기본 1페이지로 사용
+    //검색어 추가 (type= 대상, search = 검색어)
+    //@RequestParam은 ?뒤에 변수로 보낸 값을 처리 (value="보낸 변수", defaultValue="변수가 없을 때 대체")
+    public String listForm(@PageableDefault(page = 1) Pageable pageable,
+                           @RequestParam(value = "type", defaultValue = "") String type,
+                           @RequestParam(value = "search", defaultValue = "") String search,
+                           Model model) {
+        Page<BoardDTO> boardDTOS = boardService.list(pageable, type, search);
+
+        //추가로 페이지 정보도 view로 전달(하단에 출력할 정보를 가공)
+        Map<String, Integer> pageinfo = PageService.Pagination(boardDTOS);
+
+        model.addAttribute("type", type); // 검색한 자료
+        model.addAttribute("search", search);
+        //여러개의 변수를 한번에 전달할 때 model.addAllAttributes()를 사용
+        model.addAllAttributes(pageinfo);  //페이지 정보
+        //서비스처리 (전체조회)
+        model.addAttribute("list", boardDTOS); //조회데이터
+        return "board/list";
+    }
+
+
+
+
+
+
+
+    //상세조회(R)-DTO의 변수명
+    @GetMapping("/board/{id}")
+    public String readForm(@PathVariable Long id, Model model) {
+        BoardDTO boardDTO = boardService.read(id);
+        //서비스에서 값을 받으면 반드시 model로 전달
+        model.addAttribute("boardDTO", boardDTO);
+        return "board/read";
+    }
+
+    /*Model(변수)AndView(페이지)
+    public ModelAndView readForm() {
+    }
+
+    public String(View) readForm(Model){
+
+    }*/
+
+
+
+
+
+}//요청처리

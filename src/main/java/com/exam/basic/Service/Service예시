@@ -1,0 +1,112 @@
+
+
+
+//순서 보장을 위한 클래스
+@Service
+//repository, entity, dto를 주입
+@RequiredArgsConstructor
+//데이터 베이스 처리를 모아서 처리(일괄처리)
+@Transactional
+public class BoardService {
+
+    //사용할 저장소
+    private final BoardRepository boardRepository;
+    //변환 처리
+    private final ModelMapper modelMapper;
+
+
+    //삽입
+    //view에서 DTO 전달 -> Entity변환 후 데이터베이스에 저장
+    public void insert(BoardDTO boardDTO) {
+        //데이터베이스 처리용
+        //DTO의 내용을 Entity의 내용에 맞게 매칭처리
+        BoardEntity boardEntity = modelMapper.map(boardDTO, BoardEntity.class);
+
+        //사용할 데이터베이스 질의어로 데이터베이스 구동
+        //데이터 저장확인 가능 -> void를 다른 것으로 바꿔야함
+        boardRepository.save(boardEntity);
+    }
+
+
+
+
+    //수정
+    public void update(BoardDTO boardDTO) {
+        //수정할 데이터가 존재하는가?
+        // 수정할 id로 조회
+        Optional<BoardEntity> temp = boardRepository.findById(boardDTO.getId());
+
+        if (temp.isPresent()) { //존재하면
+            BoardEntity boardEntity = modelMapper.map(boardDTO, BoardEntity.class);
+            //사용할 데이터베이스 질의어로 데이터베이스 구동
+            //데이터 저장확인 가능 -> void를 다른 것으로 바꿔야함
+            //데이터베이스 처리를 위한 변환 DTO -> Entity ((BoardDTO boardDTO))
+            boardRepository.save(boardEntity); //질의어
+            //결과를 Controller에 전달하기 위해 Entity -> DTO (public BoardDTO)
+        }
+    }
+
+
+
+    //삭제
+    public void delete(Long id) {
+        boardRepository.deleteById(id); //해당 번호 자료 삭제
+    }
+
+
+
+
+    //개별조회
+    //요청번호 ->조회 -> DTO변환 후 ->View전달
+    public BoardDTO read(Long id) {
+        //요청한 번호를 조회
+        Optional<BoardEntity> temp = boardRepository.findById(id);
+        //변환
+        BoardDTO boardDTO = modelMapper.map(temp, BoardDTO.class);
+        return boardDTO ;
+
+        /*이렇게 줄여도 됨
+        return modelMapper.map(temp, BoardDTO.class);*/
+    }
+
+
+
+    //전체조회 List(전체 목록 가져올 때) == 값
+    // Pageable(페이지처리해서 가져올 때) == 값, 페이지 정보
+    // public Page(전달시 페이지 정보) List(pageable 작업할 페이지 번호)
+    public Page<BoardDTO> list(Pageable page, String type, String search) {
+        //페이지 정보를 읽기위한 정렬
+        int currentPage = page.getPageNumber() - 1; //데이터베이스 페이지 번호 변경
+        int pageLimit=5; // 한 화면에 출력할 데이터 갯수
+
+        //페이지 처리를 위한 정렬
+        //PageRequest.of페이지요청(찾을 페이지, 가져올 갯수, 정렬(정렬형식DESC(내림차순),ASC(오름차순)), 기준)
+        Pageable pageable = PageRequest.of(currentPage, pageLimit,
+                Sort.by(Sort.Direction.DESC, "id"));
+
+
+        Page<BoardEntity> boardEntities;
+        //검색을 추가
+        if (type.equals("s") && search != null) {   //제목을 선택하고 검색어가 있으면
+            // JPA 기본기능으로는 조회처리x, 사용자가 SQL을 작성
+            boardEntities = boardRepository.SubjectSearch(search, pageable);
+        } else if (type.equals("c") && search != null) { // 내용을 선택하고 검색어가 있으면
+            boardEntities = boardRepository.ContentSearch(search, pageable);
+        } else if (type.equals("w") && search != null) { //작성자를 선택하고 검색어가 있으면
+            boardEntities = boardRepository.WriterSearch(search, pageable);
+        } else if (type.equals("scw") && search != null) { //모든곳에서
+            boardEntities = boardRepository.AllSearch(search, pageable);
+        }else { //검색할 값이 없을 때는
+            //전체 조회
+            boardEntities = boardRepository.findAll(pageable);
+        }
+
+        //변환
+        //entity(entity, page) -> data(임시 변수) -> data값을 modelMapper로 변환
+        Page<BoardDTO> boardDTOS = boardEntities.map(data -> modelMapper.map(data,BoardDTO.class));
+        return boardDTOS;
+    }
+
+
+
+}
