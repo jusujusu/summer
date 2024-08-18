@@ -47,6 +47,9 @@ dependencies {
     providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+
     // modelMapper(DTO <-> Entity간에 변환)
     implementation 'org.modelmapper:modelmapper:3.1.1'
 }
